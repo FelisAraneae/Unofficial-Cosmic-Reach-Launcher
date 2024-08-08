@@ -15,7 +15,7 @@ def check_for_config():
     config = configparser.ConfigParser()
     if not os.path.exists("./config.ini"):
         config["App Settings"] = {
-            "Dark_Mode": "auto"
+            "Dark_Mode": "Auto"
         }
         with open("./config.ini", "w") as configfile:
             config.write(configfile)
@@ -30,3 +30,11 @@ def check_in_config(section, key):
         return config.get(section, key)
     except (configparser.NoSectionError, configparser.NoOptionError):
         return None
+    
+def update_in_config(section, key, value):
+    config = configparser.ConfigParser()
+    config_file = "./config.ini"
+    config.read("./config.ini")
+    config.set(section, key, value)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)

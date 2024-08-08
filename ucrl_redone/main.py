@@ -9,6 +9,17 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import *
 
+def update_theme():
+    crl.check_for_config()
+    dark_setting = crl.check_in_config("App Settings", "dark_mode")
+    if dark_setting == "Auto":
+        if darkdetect.isDark():
+            qdarktheme.setup_theme()
+    elif dark_setting == "Dark":
+        qdarktheme.setup_theme(dark_setting.lower())
+    else:
+        qdarktheme.setup_theme("light")
+
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -31,31 +42,33 @@ class MyWidget(QtWidgets.QWidget):
         self.settings_tab.setLayout(settings_layout)
         
         #Defining Setting's Widgets
-        self.config_label = QLabel(self.settings_tab)
-        self.config_label.setText("<div style ='font-size: 18px;'><b>App Location</b></div>")
-        self.config_box = QLineEdit(self.settings_tab)
+        self.theme_label = QLabel(self.settings_tab)
+        self.theme_label.setText("<div style ='font-size: 18px;'><b>Application Theme</b></div>")
+        self.theme_dropdown = QComboBox()
+        dropdown_fill = ["Dark", "Light", "Auto"]
+        self.theme_dropdown.addItems(dropdown_fill)
+        self.theme_dropdown.currentIndexChanged.connect(self.update_theme_combo_box)
+        self.theme_dropdown.setCurrentIndex((dropdown_fill).index(crl.check_in_config("App Settings", "dark_mode")))
         
         # Adding Widgets to Settings
-        settings_layout.addWidget(self.config_label)
-        settings_layout.addWidget(self.config_box)
+        settings_layout.addWidget(self.theme_label)
+        settings_layout.addWidget(self.theme_dropdown)
         settings_layout.addStretch()
         
     @QtCore.Slot()
     def magic(self):
         print("working!")
-
+    
+    @QtCore.Slot()
+    def update_theme_combo_box(self, value):
+        crl.update_in_config("App Settings", "dark_mode", ["Dark", "Light", "Auto"][value])
+        update_theme()
 
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
-    crl.check_for_config()
-    dark_setting = crl.check_in_config("App Settings", "dark_mode")
-    if dark_setting == "auto":
-        if darkdetect.isDark():
-            qdarktheme.setup_theme()
-    elif dark_setting == "dark":
-        qdarktheme.setup_theme()
-
+    update_theme()
+    
     window = MyWidget()
     window.resize(800, 600)
     window.setMinimumSize(420, 260)
