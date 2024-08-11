@@ -15,6 +15,8 @@ def update_theme():
     if dark_setting == "Auto":
         if darkdetect.isDark():
             qdarktheme.setup_theme()
+        else:
+            qdarktheme.setup_theme("light")
     elif dark_setting == "Dark":
         qdarktheme.setup_theme(dark_setting.lower())
     else:
@@ -28,11 +30,14 @@ class MyWidget(QtWidgets.QWidget):
         self.tabs = QTabWidget(self)
         self.home_tab = QScrollArea()
         self.settings_tab = QScrollArea()
+        # Set QScrollArea to be resizable
+        self.home_tab.setWidgetResizable(True)
+        self.settings_tab.setWidgetResizable(True)
         #Add tabs to window
         self.tabs.addTab(self.home_tab, "Home")
         self.tabs.addTab(self.settings_tab, "Settings")
         
-        #Modify & Defining tabs' layout
+        ###Modify & Defining tabs' layout
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.tabs)
         self.setLayout(layout)
@@ -40,19 +45,59 @@ class MyWidget(QtWidgets.QWidget):
         settings_layout = QtWidgets.QVBoxLayout(self.settings_tab)
         self.home_tab.setLayout(home_layout)
         self.settings_tab.setLayout(settings_layout)
+        #Create content widgets
+        home_content = QWidget()
+        settings_content = QWidget()
+        #Set layout for content widgets
+        home_layout = QtWidgets.QVBoxLayout(home_content)
+        settings_layout = QtWidgets.QVBoxLayout(settings_content)
+        #Add content widgets to scroll areas
+        self.home_tab.setWidget(home_content)
+        self.settings_tab.setWidget(settings_content)
         
-        #Defining Setting's Widgets
+        ###Defining Setting's Widgets
+        #Labels
         self.theme_label = QLabel(self.settings_tab)
         self.theme_label.setText("<div style ='font-size: 18px;'><b>Application Theme</b></div>")
+        self.update_label = QLabel(self.settings_tab)
+        self.update_label.setText("<div style ='font-size: 18px;'><b>Update</b></div>")
+        self.info_label = QLabel(self.settings_tab)
+        self.info_label.setText("<div style ='font-size: 18px;'><b>Info</b></div>")
+        self.version_label = QLabel(self.settings_tab)
+        self.version_label.setText("<div style ='font-size: 13px;'>UCRL 0.0.5</div>")
+        self.authors_label = QLabel(self.settings_tab)
+        self.authors_label.setText("<div style ='font-size: 13px;'>By <a href='https://github.com/ieatsoulsmeow'>IEatSoulsMeow</a> and <a href='https://github.com/felisaraneae'>FelisAraneae</a>")
+        self.authors_label.setOpenExternalLinks(True)
+        self.github_label = QLabel(self.settings_tab)
+        self.github_label.setText("<div style ='font-size: 13px;'>Source can be found on <a href='https://github.com/FelisAraneae/Unofficial-Cosmic-Reach-Launcher'>Github</a>")
+        self.github_label.setOpenExternalLinks(True)
+        self.discord_label = QLabel(self.settings_tab)
+        self.discord_label.setText("<div style ='font-size: 13px;'>Join the unofficial <a href='https://discord.gg/jRs9q7FMSu'>Discord</a> for other Cosmic Reach launchers")
+        self.discord_label.setOpenExternalLinks(True)
+        #QComboBox
         self.theme_dropdown = QComboBox()
         dropdown_fill = ["Dark", "Light", "Auto"]
         self.theme_dropdown.addItems(dropdown_fill)
         self.theme_dropdown.currentIndexChanged.connect(self.update_theme_combo_box)
         self.theme_dropdown.setCurrentIndex((dropdown_fill).index(crl.check_in_config("App Settings", "dark_mode")))
+        #Buttons
+        self.update_button = QPushButton()
+        self.update_button.setText("Update Application")
+        self.update_button.setIcon(QIcon("assets/button_icons/update_darkmode.svg"))
+        self.update_button.clicked.connect(self.magic)
         
         # Adding Widgets to Settings
         settings_layout.addWidget(self.theme_label)
         settings_layout.addWidget(self.theme_dropdown)
+        settings_layout.addSpacing(35)
+        settings_layout.addWidget(self.update_label)
+        settings_layout.addWidget(self.update_button)
+        settings_layout.addSpacing(35)
+        settings_layout.addWidget(self.info_label)
+        settings_layout.addWidget(self.version_label)
+        settings_layout.addWidget(self.authors_label)
+        settings_layout.addWidget(self.github_label)
+        settings_layout.addWidget(self.discord_label)
         settings_layout.addStretch()
         
     @QtCore.Slot()
