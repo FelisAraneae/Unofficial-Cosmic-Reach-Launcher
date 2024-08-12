@@ -25,6 +25,20 @@ def update_theme():
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        def reload_instances(self):
+            layout = self.home_tab.layout()
+            if layout is not None:
+                while layout.count() > 0:
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.deleteLater()
+                        
+            print("Loading instances")
+            for i in range(len(["Test 1", "Test 2", "Test 3"])):
+                button = QPushButton(["Test 1", "Test 2", "Test 3"][i], self.home_tab) 
+                layout.addWidget(button)            
+        
         ###Creating Tabs
         #Define Tabs
         self.tabs = QTabWidget(self)
@@ -64,7 +78,7 @@ class MyWidget(QtWidgets.QWidget):
         self.info_label = QLabel(self.settings_tab)
         self.info_label.setText("<div style ='font-size: 18px;'><b>Info</b></div>")
         self.version_label = QLabel(self.settings_tab)
-        self.version_label.setText("<div style ='font-size: 13px;'>UCRL 0.0.5</div>")
+        self.version_label.setText("<div style ='font-size: 13px;'>UCRL 0.0.6</div>")
         self.authors_label = QLabel(self.settings_tab)
         self.authors_label.setText("<div style ='font-size: 13px;'>By <a href='https://github.com/ieatsoulsmeow'>IEatSoulsMeow</a> and <a href='https://github.com/felisaraneae'>FelisAraneae</a>")
         self.authors_label.setOpenExternalLinks(True)
@@ -100,6 +114,9 @@ class MyWidget(QtWidgets.QWidget):
         settings_layout.addWidget(self.discord_label)
         settings_layout.addStretch()
         
+        ### Loading Instances
+        reload_instances(self)
+        
     @QtCore.Slot()
     def magic(self):
         print("working!")
@@ -119,9 +136,10 @@ if __name__ == "__main__":
     window.setMinimumSize(420, 260)
     if crl.check_os():
         window.setWindowTitle("Unofficial Cosmic Reach Launcher - macOS")
+        window.setWindowIcon(QIcon("assets/ucrl_icon.png"))
     else:
         window.setWindowTitle("Unofficial Cosmic Reach Launcher - Windows")
-    window.setWindowIcon(QIcon("assets/ucrl_icon.png"))
+        window.setWindowIcon(QIcon("assets/ucrl_icon.icns"))
     window.show()
 
     sys.exit(app.exec())
