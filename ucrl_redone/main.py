@@ -25,7 +25,7 @@ def update_theme():
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        def reload_instances(self):
+        def reload_instances(self, home_layout):
             layout = self.home_tab.layout()
             if layout is not None:
                 while layout.count() > 0:
@@ -35,9 +35,12 @@ class MyWidget(QtWidgets.QWidget):
                         widget.deleteLater()
                         
             print("Loading instances")
-            for i in range(len(["Test 1", "Test 2", "Test 3"])):
-                button = QPushButton(["Test 1", "Test 2", "Test 3"][i], self.home_tab) 
-                layout.addWidget(button)            
+            for instance in ["Test 1", "Test 2", "Test 3", "Test 4", "Test 5"]:
+                button = QPushButton(instance, self.home_tab) 
+                home_layout.addWidget(button)
+            edit_instances = QPushButton("Edit Instances")
+            home_layout.addWidget(edit_instances)
+            home_layout.addStretch()
         
         ###Creating Tabs
         #Define Tabs
@@ -88,6 +91,8 @@ class MyWidget(QtWidgets.QWidget):
         self.discord_label = QLabel(self.settings_tab)
         self.discord_label.setText("<div style ='font-size: 13px;'>Join the unofficial <a href='https://discord.gg/jRs9q7FMSu'>Discord</a> for other Cosmic Reach launchers")
         self.discord_label.setOpenExternalLinks(True)
+        self.developer_label = QLabel(self.settings_tab)
+        self.developer_label.setText("<div style ='font-size: 18px;'><b>Developer Settings</b></div>")
         #QComboBox
         self.theme_dropdown = QComboBox()
         dropdown_fill = ["Dark", "Light", "Auto"]
@@ -99,6 +104,16 @@ class MyWidget(QtWidgets.QWidget):
         self.update_button.setText("Update Application")
         self.update_button.setIcon(QIcon("assets/button_icons/update_darkmode.svg"))
         self.update_button.clicked.connect(self.magic)
+        #Toggle
+        self.developer_toggle = QPushButton("Developer Mode: ", self)
+        if crl.check_in_config("App Settings", "dev_mode") == "True":
+            self.developer_toggle.setText("Developer Mode: Enabled")
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#43904b; color:#dfdfdf}")
+        else:
+            self.developer_toggle.setText("Developer Mode: False")
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#904343; color:#dfdfdf}")
+        self.developer_toggle.setCheckable(True)
+        self.developer_toggle.clicked.connect(self.toggle)
         
         # Adding Widgets to Settings
         settings_layout.addWidget(self.theme_label)
@@ -112,14 +127,27 @@ class MyWidget(QtWidgets.QWidget):
         settings_layout.addWidget(self.authors_label)
         settings_layout.addWidget(self.github_label)
         settings_layout.addWidget(self.discord_label)
+        settings_layout.addSpacing(70)
+        settings_layout.addWidget(self.developer_label)
+        settings_layout.addWidget(self.developer_toggle)
         settings_layout.addStretch()
         
         ### Loading Instances
-        reload_instances(self)
+        reload_instances(self, home_layout)
         
     @QtCore.Slot()
     def magic(self):
         print("working!")
+        
+    @QtCore.Slot()
+    def toggle(self):
+        if self.developer_toggle.isChecked():
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#43904b; color:#dfdfdf}")
+            self.developer_toggle.setText("Developer Mode: Enabled")
+        else:
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#904343; color:#dfdfdf}")
+            self.developer_toggle.setText("Developer Mode: Disabled")
+        crl.update_in_config("App Settings", "dev_mode", str(self.developer_toggle.isChecked()))
     
     @QtCore.Slot()
     def update_theme_combo_box(self, value):
