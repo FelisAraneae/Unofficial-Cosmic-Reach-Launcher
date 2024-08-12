@@ -15,7 +15,8 @@ def check_for_config():
     config = configparser.ConfigParser()
     if not os.path.exists("./config.ini"):
         config["App Settings"] = {
-            "Dark_Mode": "Auto"
+            "dark_mode": "Auto",
+            "dev_mode": "True"
         }
         with open("./config.ini", "w") as configfile:
             config.write(configfile)

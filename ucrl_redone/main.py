@@ -1,5 +1,5 @@
 import sys
-import random
+import random as ran
 import subprocess
 import configparser
 import darkdetect
@@ -22,9 +22,31 @@ def update_theme():
     else:
         qdarktheme.setup_theme("light")
 
+def developer_mode_widgets(visibility, self):
+            if not visibility or visibility == "False":
+                self.relinst_button.hide()
+            else:
+                self.relinst_button.show()
+
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        def reload_instances(self, home_layout):
+            if home_layout is not None:
+                while home_layout.count() > 0:
+                    item = home_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.deleteLater()
+            print("Loading instances")
+            for instance in ["Test 1", "Test 2", "Test 3", "Test 4", "Test 5"]:
+                button = QPushButton(instance)
+                home_layout.addWidget(button)
+            edit_instances = QPushButton("Edit Instances")
+            home_layout.addWidget(edit_instances)
+            home_layout.addStretch()
+
+        
         ###Creating Tabs
         #Define Tabs
         self.tabs = QTabWidget(self)
@@ -64,7 +86,7 @@ class MyWidget(QtWidgets.QWidget):
         self.info_label = QLabel(self.settings_tab)
         self.info_label.setText("<div style ='font-size: 18px;'><b>Info</b></div>")
         self.version_label = QLabel(self.settings_tab)
-        self.version_label.setText("<div style ='font-size: 13px;'>UCRL 0.0.5</div>")
+        self.version_label.setText("<div style ='font-size: 13px;'>UCRL 0.0.6</div>")
         self.authors_label = QLabel(self.settings_tab)
         self.authors_label.setText("<div style ='font-size: 13px;'>By <a href='https://github.com/ieatsoulsmeow'>IEatSoulsMeow</a> and <a href='https://github.com/felisaraneae'>FelisAraneae</a>")
         self.authors_label.setOpenExternalLinks(True)
@@ -74,6 +96,8 @@ class MyWidget(QtWidgets.QWidget):
         self.discord_label = QLabel(self.settings_tab)
         self.discord_label.setText("<div style ='font-size: 13px;'>Join the unofficial <a href='https://discord.gg/jRs9q7FMSu'>Discord</a> for other Cosmic Reach launchers")
         self.discord_label.setOpenExternalLinks(True)
+        self.developer_label = QLabel(self.settings_tab)
+        self.developer_label.setText("<div style ='font-size: 18px;'><b>Developer Settings</b></div>")
         #QComboBox
         self.theme_dropdown = QComboBox()
         dropdown_fill = ["Dark", "Light", "Auto"]
@@ -81,10 +105,24 @@ class MyWidget(QtWidgets.QWidget):
         self.theme_dropdown.currentIndexChanged.connect(self.update_theme_combo_box)
         self.theme_dropdown.setCurrentIndex((dropdown_fill).index(crl.check_in_config("App Settings", "dark_mode")))
         #Buttons
-        self.update_button = QPushButton()
-        self.update_button.setText("Update Application")
+        self.update_button = QPushButton("Update Application")
         self.update_button.setIcon(QIcon("assets/button_icons/update_darkmode.svg"))
         self.update_button.clicked.connect(self.magic)
+        #Buttons
+        self.relinst_button = QPushButton("Reload Instances")
+        self.relinst_button.clicked.connect(lambda: reload_instances(self, home_layout))
+        #Toggle
+        self.developer_toggle = QPushButton("Developer Mode: ", self)
+        self.developer_toggle.setCheckable(True)
+        self.developer_toggle.setChecked(True)
+        self.developer_toggle.clicked.connect(self.toggle)
+        if crl.check_in_config("App Settings", "dev_mode") == "True":
+            self.developer_toggle.setText("Developer Mode: Enabled")
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#43904b; color:#dfdfdf}")
+        else:
+            self.developer_toggle.setChecked(False)
+            self.developer_toggle.setText("Developer Mode: False")
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#904343; color:#dfdfdf}")
         
         # Adding Widgets to Settings
         settings_layout.addWidget(self.theme_label)
@@ -98,11 +136,30 @@ class MyWidget(QtWidgets.QWidget):
         settings_layout.addWidget(self.authors_label)
         settings_layout.addWidget(self.github_label)
         settings_layout.addWidget(self.discord_label)
+        settings_layout.addSpacing(70)
+        settings_layout.addWidget(self.developer_label)
+        settings_layout.addWidget(self.developer_toggle)
+        settings_layout.addWidget(self.relinst_button)
         settings_layout.addStretch()
+        
+        ### Afterwards
+        developer_mode_widgets(crl.check_in_config("App Settings", "dev_mode"), self)
+        reload_instances(self, home_layout)
         
     @QtCore.Slot()
     def magic(self):
         print("working!")
+        
+    @QtCore.Slot()
+    def toggle(self):
+        if self.developer_toggle.isChecked():
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#43904b; color:#dfdfdf}")
+            self.developer_toggle.setText("Developer Mode: Enabled")
+        else:
+            self.developer_toggle.setStyleSheet("QPushButton {background-color:#904343; color:#dfdfdf}")
+            self.developer_toggle.setText("Developer Mode: Disabled")
+        crl.update_in_config("App Settings", "dev_mode", str(self.developer_toggle.isChecked()))
+        developer_mode_widgets(self.developer_toggle.isChecked(), self)
     
     @QtCore.Slot()
     def update_theme_combo_box(self, value):
@@ -119,9 +176,10 @@ if __name__ == "__main__":
     window.setMinimumSize(420, 260)
     if crl.check_os():
         window.setWindowTitle("Unofficial Cosmic Reach Launcher - macOS")
+        window.setWindowIcon(QIcon("assets/ucrl_icon.png"))
     else:
         window.setWindowTitle("Unofficial Cosmic Reach Launcher - Windows")
-    window.setWindowIcon(QIcon("assets/ucrl_icon.png"))
+        window.setWindowIcon(QIcon("assets/ucrl_icon.icns"))
     window.show()
 
     sys.exit(app.exec())
