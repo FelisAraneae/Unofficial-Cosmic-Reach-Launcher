@@ -6,7 +6,8 @@ import darkdetect
 import crl_import as crl
 import qdarktheme
 from PySide6 import QtCore, QtWidgets, QtGui
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtCore import QSize, Qt, QRect, QPoint
 from PySide6.QtWidgets import *
 
 def update_theme():
@@ -28,6 +29,79 @@ def developer_mode_widgets(visibility, self):
             else:
                 self.relinst_button.show()
 
+#Defining FlowLayout              
+class FlowLayout(QLayout):
+    def __init__(self, parent=None, margin=0, spacing=-1):
+        super().__init__(parent)
+        self.itemList = []
+        self.setContentsMargins(margin, margin, margin, margin)
+        self.setSpacing(spacing)
+    
+    def addItem(self, item):
+        self.itemList.append(item)
+    
+    def count(self):
+        return len(self.itemList)
+    
+    def itemAt(self, index):
+        if 0 <= index < len(self.itemList):
+            return self.itemList[index]
+        return None
+    
+    def takeAt(self, index):
+        if 0 <= index < len(self.itemList):
+            return self.itemList.pop(index)
+        return None
+    
+    def expandingDirections(self):
+        return Qt.Orientations(Qt.Orientation(0))
+    
+    def hasHeightForWidth(self):
+        return True
+    
+    def heightForWidth(self, width):
+        height = self.doLayout(QRect(0, 0, width, 0), True)
+        return height
+    
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self.doLayout(rect, False)
+    
+    def sizeHint(self):
+        return self.minimumSize()
+    
+    def minimumSize(self):
+        size = QSize()
+        for item in self.itemList:
+            size = size.expandedTo(item.minimumSize())
+        size += QSize(2 * self.contentsMargins().top(), 2 * self.contentsMargins().top())
+        return size
+    
+    def doLayout(self, rect, testOnly):
+        x = rect.x()
+        y = rect.y()
+        lineHeight = 0
+        
+        for item in self.itemList:
+            widget = item.widget()
+            spaceX = self.spacing() + widget.style().layoutSpacing(QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal)
+            spaceY = self.spacing() + widget.style().layoutSpacing(QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical)
+            
+            nextX = x + item.sizeHint().width() + spaceX
+            if nextX - spaceX > rect.right() and lineHeight > 0:
+                x = rect.x()
+                y += lineHeight + spaceY
+                nextX = x + item.sizeHint().width() + spaceX
+                lineHeight = 0
+            
+            if not testOnly:
+                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+            
+            x = nextX
+            lineHeight = max(lineHeight, item.sizeHint().height())
+        
+        return y + lineHeight - rect.y()
+
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -39,13 +113,28 @@ class MyWidget(QtWidgets.QWidget):
                     if widget is not None:
                         widget.deleteLater()
             print("Loading instances")
-            for instance in ["Test 1", "Test 2", "Test 3", "Test 4", "Test 5"]:
-                button = QPushButton(instance)
-                home_layout.addWidget(button)
+            button_widget = QWidget()
+            button_layout = FlowLayout(button_widget)
+            list = []
+            for i in range(ran.randint(1,30)):
+                list.append("Instance " + str(i))
+            for instance in list:
+                button = QToolButton()
+                button.setText(instance)
+                icon = QIcon("assets/app_icons/ucrl_icon.png")
+                button.setIcon(icon)
+                button.setFixedSize(QSize(100, 100))
+                button.setIconSize(QSize(48, 48))
+                button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+                button_layout.addWidget(button)
+            home_layout.addWidget(button_widget)
+            add_instance = QPushButton("Add Instance")
+            add_instance.clicked.connect(self.add_instance)
+            home_layout.addWidget(add_instance)
             edit_instances = QPushButton("Edit Instances")
+            edit_instances.clicked.connect(self.edit_instances)
             home_layout.addWidget(edit_instances)
             home_layout.addStretch()
-
         
         ###Creating Tabs
         #Define Tabs
@@ -63,7 +152,7 @@ class MyWidget(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.tabs)
         self.setLayout(layout)
-        home_layout = QtWidgets.QVBoxLayout(self.home_tab)
+        home_layout = QtWidgets.QHBoxLayout(self.home_tab)
         settings_layout = QtWidgets.QVBoxLayout(self.settings_tab)
         self.home_tab.setLayout(home_layout)
         self.settings_tab.setLayout(settings_layout)
@@ -149,7 +238,7 @@ class MyWidget(QtWidgets.QWidget):
     @QtCore.Slot()
     def magic(self):
         print("working!")
-        
+
     @QtCore.Slot()
     def toggle(self):
         if self.developer_toggle.isChecked():
@@ -160,12 +249,74 @@ class MyWidget(QtWidgets.QWidget):
             self.developer_toggle.setText("Developer Mode: Disabled")
         crl.update_in_config("App Settings", "dev_mode", str(self.developer_toggle.isChecked()))
         developer_mode_widgets(self.developer_toggle.isChecked(), self)
-    
-    @QtCore.Slot()
+
+    @QtCore.Slot(int)
     def update_theme_combo_box(self, value):
         crl.update_in_config("App Settings", "dark_mode", ["Dark", "Light", "Auto"][value])
         update_theme()
 
+    @QtCore.Slot()
+    def edit_instances(self):
+        self.edit_instance = QMainWindow()
+        self.edit_instance.setWindowTitle("New Window")
+        self.edit_instance.resize(300, 200)
+        layout = QVBoxLayout()
+        label = QLabel("This is a new window", self.edit_instance)
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        layout.addWidget(label)
+        self.edit_instance.setCentralWidget(central_widget)
+        self.edit_instance.show()
+
+    @QtCore.Slot()
+    def add_instance(self):
+        #Defining Window
+        self.new_instance = QMainWindow()
+        self.new_instance.setWindowTitle("New Instance")
+        self.new_instance.setMinimumSize(500, 300)
+        layout = FlowLayout()
+
+        #Defining Icon
+        self.icon_label = QLabel(self.new_instance)
+        pixmap = QPixmap("assets/app_icons/ucrl_icon.png")
+        scaled_pixmap = pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.icon_label.setPixmap(scaled_pixmap)
+        self.icon_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.icon_label)
+
+        #Defining LineEdits
+        self.instance_name = QLineEdit(self.new_instance)
+        self.instance_name.setText("New Instance")
+        self.instance_name.setMinimumWidth(360)
+        layout.addWidget(self.instance_name)
+        
+        
+        self.icon_path_edit = QLineEdit(self.new_instance)
+        self.icon_path_edit.setText("assets/app_icons/ucrl_icon.png")
+        self.icon_path_edit.setMinimumWidth(266)
+        layout.addWidget(self.icon_path_edit)
+
+        #Defining PushButton
+        self.select_icon_button = QPushButton("Select Icon", self.new_instance)
+        self.select_icon_button.clicked.connect(self.select_icon)
+        layout.addWidget(self.select_icon_button)
+
+        #Setting Layout
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        self.new_instance.setCentralWidget(central_widget)
+        central_widget.setContentsMargins(10, 10, 10, 10)
+        self.new_instance.show()
+
+        
+    @QtCore.Slot()
+    def select_icon(self):
+        file_path, _ = crl.open_dialog("Select Icon", "Images (*.png *.xpm *.jpg)", self)
+        if file_path:
+            self.icon_path_edit.setText(file_path)
+            pixmap = QPixmap(file_path)
+            scaled_pixmap = pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.icon_label.setPixmap(scaled_pixmap)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])

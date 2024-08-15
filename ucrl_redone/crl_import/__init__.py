@@ -2,6 +2,8 @@ import os
 import sys
 import configparser
 import platform
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import *
             
 def check_os():
     if platform.system() == 'Darwin':
@@ -39,3 +41,7 @@ def update_in_config(section, key, value):
     config.set(section, key, value)
     with open(config_file, 'w') as configfile:
         config.write(configfile)
+
+def open_dialog(name, type, self):
+    file_path, _ = QFileDialog.getOpenFileName(self, name, "", type)
+    return file_path, _
